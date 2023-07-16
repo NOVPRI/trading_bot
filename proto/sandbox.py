@@ -2,6 +2,7 @@ from proto import common_pb2, sandbox_pb2, sandbox_pb2_grpc, operations_pb2
 from proto.grpcConnection import conn
 from service import sub
 
+
 user = conn()
 
 
@@ -25,18 +26,6 @@ def add_money():
     print(money)
 
 
-def money_info():
-    try:
-        account_stub = sandbox_pb2_grpc.SandboxServiceStub(user.channel)
-        money = account_stub.GetSandboxWithdrawLimits(sandbox_pb2.SandboxPayInRequest(account_id=user.account), metadata=user.token)
-        balance = ""
-        for item in money.money:
-            balance += f"{item.currency} = {sub.price(item)} | "
-        return f'Баланс: {balance.rstrip("| ")}'
-    except Exception as e:
-        print("Не удалось узнать баланс, ОШИБКА:", str(e))
-
-
 def get_portfolio():
     info = user.operation().GetPortfolio(operations_pb2.PortfolioRequest(account_id=user.account), metadata=user.token)
     print("\nсодержимое портфеля:")
@@ -48,6 +37,5 @@ def get_portfolio():
 if __name__ == "__main__":
     # new_account() # создать новый аккаунт
     # add_money() # добавить денег
-    print(money_info())
     get_portfolio()
 

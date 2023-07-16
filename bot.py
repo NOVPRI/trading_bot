@@ -7,7 +7,6 @@ import time  # стандартные
 from datetime import datetime, timedelta
 
 from proto.grpcConnection import conn  # модули
-from proto.sandbox import money_info
 from proto import marketdata_pb2, orders_pb2, operations_pb2
 from service import sub
 from analyst import indicators
@@ -37,7 +36,6 @@ def pick_candles(x, per='1_MIN', j=0):
             if not historical_candles.candles:
                 j += 1
             else:
-                print(j)
                 return historical_candles.candles
     except Exception as e:
         msg(f"Не удалось взять исторические свечи {x['name']}")
@@ -112,6 +110,17 @@ def get_portfolio(figi):  # переделать однажды
         print("Не удалось получить информацию о портфеле, ОШИБКА:", str(e))
 
 
+def money_info():
+    try:
+        money = user.operation().GetWithdrawLimits(operations_pb2.WithdrawLimitsRequest(account_id=user.account), metadata=user.token)
+        balance = ""
+        for item in money.money:
+            balance += f"{item.currency} = {sub.price(item)} | "
+        return f'Баланс: {balance.rstrip("| ")}'
+    except Exception as e:
+        print("Не удалось узнать баланс, ОШИБКА:", str(e))
+
+
 def operation(figi):
     t = (datetime.now() - timedelta(days=1)).timestamp()
     seconds1 = int(t)
@@ -133,9 +142,7 @@ def operation(figi):
 
 
 def make_deal(status, x):
-    print('заход в дил')
     if get_portfolio(x.figi) != "void":
-        print('в портфеле не пусто')
         return
     if status == 'BUY':
         go_trade(x['name'], x.figi, x['count'], 'BUY', 'покупка')
@@ -175,7 +182,7 @@ def go_trade(name, figi, count, direction, deal):
         money = sub.price(res.total_order_amount)
         commission = sub.price(res.executed_commission) if not config.sandboxMode else 'недоступна в песочнице'
         msg(f"{deal.upper()} {name.upper()}, {res.lots_executed} ШТ. \nЦена с учетом комиссии {money} \nСумма комиссии {commission}"
-            f"\n{money_info() if config.sandboxMode else 'баланс недоступен'}")
+            f"\n{money_info()}")
         print(f"{deal.upper()} {name.upper()} в размере {res.lots_executed} шт. Цена с учетом комиссии {money}, сумма комиссии {commission}")
     except Exception as e:
         msg(f"Не удалось совершить сделку {name}")
@@ -200,10 +207,10 @@ def preparation():
 
 
 def bot(x):
-    if trading_status(x.figi) is not True:
-        return print(f"Торги закрыты")
-    if not x.startT <= datetime.now().time() <= x.endT:
-        return print(f"Торги открыты, но пользовательское время вне диапазона")
+    # if trading_status(x.figi) is not True:
+    #     return print(f"Торги закрыты")
+    # if not x.startT <= datetime.now().time() <= x.endT:
+    #     return print(f"Торги открыты, но пользовательское время вне диапазона")
     df = new_df(pick_candles(x), x)
     if df.iloc[-1].status == 'BUY' or df.iloc[-1].status == 'SELL':
         make_deal(df.iloc[-1].status, x)
@@ -213,10 +220,10 @@ def bot(x):
 
 def start_bot():
     for index, row in instruments.iterrows():
-        print(f"\n――――――――――――――― {row['name'].upper()} ―{' 🚫 ' if not row.shortly else ''}―――――――――――――――――")
+        print(f"\n―――――――――――――――― {row['name'].upper()} ―{' 🚫 ' if not row.shortly else ''}――――――――――――――――――")
         bot(row)
-        print('――――――――――――――――――――――――――――――――――――――――')
-    print(f"\n■■■ {money_info() if config.sandboxMode else 'счет недоступен'} ■■■■■■■■■■■ свечи {(datetime.now().minute - 1)} минуты ■■■■■■■■■■■\n")
+        print(f"――――――――――――――――――――――――――――――――― {get_portfolio(row.figi)} ――――")
+    print(f"\n■■■ {money_info()} ■■■■■■■■■■■ свечи {(datetime.now().minute - 1)} минуты ■■■■■■■■■■■\n")
     time.sleep(45)
 
 
@@ -234,5 +241,3 @@ if __name__ == "__main__":
     choice = input("'start' чтобы запустить бота, или нажать 'enter' для теста: ")
     start_bot() if choice == '' else (loop_bot() if choice == 'start' else print('неверный ввод'))
     # loop_bot()
-
-

@@ -1,0 +1,23 @@
+[tool.poetry]
+name = "bot-invest-v1"
+version = "0.1.0"
+description = ""
+authors = ["Your Name <you@example.com>"]
+readme = "README.md"
+packages = [{include = "bot_invest_v1"}]
+
+[tool.poetry.dependencies]
+python = "^3.10"
+pandas = "^2.0.3"
+schedule = "^1.2.0"
+openpyxl = "^3.1.2"
+requests = "^2.31.0"
+numpy = "^1.25.1"
+ta = "^0.10.2"
+grpcio = "1.44.0"
+grpcio-tools = "1.44.0"
+
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"

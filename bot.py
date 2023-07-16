@@ -18,22 +18,27 @@ import config
 
 def pick_candles(x, per='1_MIN', j=0):
     try:
-        t = (datetime.now() - timedelta(days=j + 1)).timestamp()
-        seconds1 = int(t)
-        nanos1 = int(t % 1 * 1e9)
-        t2 = (datetime.now() - timedelta(days=j)).timestamp()
-        seconds2 = int(t2)
-        nanos2 = int(t2 % 1 * 1e9)
-        start_time = Timestamp(seconds=seconds1, nanos=nanos1)
-        end_time = Timestamp(seconds=seconds2, nanos=nanos2)
-        kwargs = {
-            'figi': x.figi,
-            'from': start_time,
-            'to': end_time,
-            'interval': 'CANDLE_INTERVAL_' + per
-        }
-        historical_candles = user.market().GetCandles(marketdata_pb2.GetCandlesRequest(**kwargs), metadata=user.token)
-        return historical_candles.candles
+        while True:
+            t = (datetime.now() - timedelta(days=j + 1)).timestamp()
+            seconds1 = int(t)
+            nanos1 = int(t % 1 * 1e9)
+            t2 = (datetime.now() - timedelta(days=j)).timestamp()
+            seconds2 = int(t2)
+            nanos2 = int(t2 % 1 * 1e9)
+            start_time = Timestamp(seconds=seconds1, nanos=nanos1)
+            end_time = Timestamp(seconds=seconds2, nanos=nanos2)
+            kwargs = {
+                'figi': x.figi,
+                'from': start_time,
+                'to': end_time,
+                'interval': 'CANDLE_INTERVAL_' + per
+            }
+            historical_candles = user.market().GetCandles(marketdata_pb2.GetCandlesRequest(**kwargs), metadata=user.token)
+            if not historical_candles.candles:
+                j += 1
+            else:
+                print(j)
+                return historical_candles.candles
     except Exception as e:
         msg(f"Не удалось взять исторические свечи {x['name']}")
         print(f"Не удалось взять исторические свечи {x['name']}, ОШИБКА:", str(e))
@@ -168,7 +173,7 @@ def go_trade(name, figi, count, direction, deal):
             return print(f"не удалось исполнить заявку {direction}")
         # make_stop()
         money = sub.price(res.total_order_amount)
-        commission = sub.price(res.executed_commission.units) if config.sandboxMode else 'недоступна в песочнице'
+        commission = sub.price(res.executed_commission) if not config.sandboxMode else 'недоступна в песочнице'
         msg(f"{deal.upper()} {name.upper()}, {res.lots_executed} ШТ. \nЦена с учетом комиссии {money} \nСумма комиссии {commission}"
             f"\n{money_info() if config.sandboxMode else 'баланс недоступен'}")
         print(f"{deal.upper()} {name.upper()} в размере {res.lots_executed} шт. Цена с учетом комиссии {money}, сумма комиссии {commission}")

@@ -7,7 +7,7 @@ releaseApi = 'invest-public-api.tinkoff.ru:443'
 sandboxApi = 'sandbox-invest-public-api.tinkoff.ru:443'
 
 releaseAccountId = '2008952190'
-sandboxAccountId = 'a12a220b-4936-4608-8e22-853c5926d3b5'
+sandboxAccountId = 'e13849e0-e669-4b1f-94de-17040fbf7e1b'
 
 tg_token = '5940241493:AAGZ2XznC49O4y5NjiOqbIam6G2El6ZgRgI'
 
